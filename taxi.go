@@ -5,10 +5,13 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
 )
+
+var muxLock sync.Mutex
 
 const sizeSymbol int = 25
 const sizeRequest int = 50
@@ -40,8 +43,10 @@ func sort() { //подсчет количества выводов заявок 
 	for i := 0; i < len(ArrRequest); i++ {
 		for j := i + 1; j < len(ArrRequest); j++ {
 			if ArrRequest[i].title == ArrRequest[j].title {
+				muxLock.Lock()
 				ArrRequest[j] = application{title: ArrRequest[i].title, views: ArrRequest[i].views + 1}
 				ArrRequest[i] = application{views: 0}
+				muxLock.Unlock()
 			}
 		}
 	}
@@ -50,19 +55,23 @@ func sort() { //подсчет количества выводов заявок 
 func mapFilling() { //функция начального заполнения мапа заявками
 	rand.Seed(time.Now().UTC().UnixNano())
 	for i := 0; i < sizeRequest; i++ {
+		muxLock.Lock()
 		firstPart = rand.Intn(sizeSymbol)
 		secondPart = rand.Intn(sizeSymbol)
 		request[i] = symbol[firstPart] + symbol[secondPart]
+		muxLock.Unlock()
 	}
 }
 
 func replacement() { //функция замещения заявок раз в 200мс
 	for {
+		muxLock.Lock()
 		var number int = rand.Intn(sizeRequest)
 		firstPart = rand.Intn(sizeSymbol)
 		secondPart = rand.Intn(sizeSymbol)
 		var x string = symbol[firstPart] + symbol[secondPart]
 		request[number] = x
+		muxLock.Unlock()
 		time.Sleep(time.Millisecond * 200)
 	}
 }
@@ -79,10 +88,12 @@ func cabbie(w http.ResponseWriter, r *http.Request) { //ф-ция-обработ
 	vars := mux.Vars(r)
 	interrogator := vars["request"]
 	if interrogator == "request" {
+		muxLock.Lock()
 		x := rand.Intn(sizeRequest)
 		fmt.Fprintln(w, "Заказ:", request[x])
 		ArrRequest[numberAdminRequest] = application{title: request[x], views: ArrRequest[numberAdminRequest].views + 1}
 		numberAdminRequest++
+		muxLock.Unlock()
 	}
 }
 func admin(w http.ResponseWriter, r *http.Request) { //функция-обработчик запросов от администратора
