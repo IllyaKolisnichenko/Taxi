@@ -43,10 +43,8 @@ func sort() { //подсчет количества выводов заявок 
 	for i := 0; i < len(ArrRequest); i++ {
 		for j := i + 1; j < len(ArrRequest); j++ {
 			if ArrRequest[i].title == ArrRequest[j].title {
-				muxLock.Lock()
 				ArrRequest[j] = application{title: ArrRequest[i].title, views: ArrRequest[i].views + 1}
 				ArrRequest[i] = application{views: 0}
-				muxLock.Unlock()
 			}
 		}
 	}
