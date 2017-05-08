@@ -55,9 +55,9 @@ func sort() { //подсчет количества выводов заявок 
 func mapFilling() { //функция начального заполнения мапа заявками
 	rand.Seed(time.Now().UTC().UnixNano())
 	for i := 0; i < sizeRequest; i++ {
-		muxLock.Lock()
 		firstPart = rand.Intn(sizeSymbol)
 		secondPart = rand.Intn(sizeSymbol)
+		muxLock.Lock()
 		request[i] = symbol[firstPart] + symbol[secondPart]
 		muxLock.Unlock()
 	}
@@ -65,10 +65,10 @@ func mapFilling() { //функция начального заполнения �
 
 func replacement() { //функция замещения заявок раз в 200мс
 	for {
-		muxLock.Lock()
 		var number int = rand.Intn(sizeRequest)
 		firstPart = rand.Intn(sizeSymbol)
 		secondPart = rand.Intn(sizeSymbol)
+		muxLock.Lock()
 		var x string = symbol[firstPart] + symbol[secondPart]
 		request[number] = x
 		muxLock.Unlock()
@@ -88,9 +88,9 @@ func cabbie(w http.ResponseWriter, r *http.Request) { //ф-ция-обработ
 	vars := mux.Vars(r)
 	interrogator := vars["request"]
 	if interrogator == "request" {
-		muxLock.Lock()
 		x := rand.Intn(sizeRequest)
 		fmt.Fprintln(w, "Заказ:", request[x])
+		muxLock.Lock()
 		ArrRequest[numberAdminRequest] = application{title: request[x], views: ArrRequest[numberAdminRequest].views + 1}
 		numberAdminRequest++
 		muxLock.Unlock()
