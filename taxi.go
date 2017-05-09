@@ -11,33 +11,36 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var muxLock sync.Mutex
-
-const sizeSymbol int = 25
-const sizeRequest int = 50
-
 //структура информации администратору
 type application struct {
 	title string
 	views int
 }
 
-var numberAdminRequest int = 0
-var firstPart, secondPart int
+var (
+	muxLock               sync.Mutex
+	numberAdminRequest    int = 0
+	firstPart, secondPart int
+	//информация по заявкам администратору
+	ArrRequest map[int]application = make(map[int]application)
 
-//информация по заявкам администратору
-var ArrRequest map[int]application = make(map[int]application)
+	//активные заявки
+	request map[int]string = make(map[int]string)
+	//Arr с символами,для создания заявок
+	symbol [sizeSymbol + 1]string = [sizeSymbol + 1]string{"a", "b", "c", "d", "e",
+						               "f", "j", "h", "i", "g",
+		                                               "k", "l", "m", "n", "o",
+		                                               "p", "q", "r", "s", "t",
+		                                               "u", "v", "w", "x", "y",
+		                                               "z"}
+)
 
-//активные заявки
-var request map[int]string = make(map[int]string)
-
-//map с символами,для создания заявок
-var symbol map[int]string = map[int]string{0: "a", 1: "b", 2: "c", 3: "d", 4: "e",
-	5: "f", 6: "j", 7: "h", 8: "i", 9: "g",
-	10: "k", 11: "l", 12: "m", 13: "n", 14: "o",
-	15: "p", 16: "q", 17: "r", 18: "s", 19: "t",
-	20: "u", 21: "v", 22: "w", 23: "x", 24: "y",
-	25: "z"}
+const (
+	usrAdmin    string = "admin"
+	usrCabbie   string = "request"
+	sizeSymbol  int    = 25
+	sizeRequest int    = 50
+)
 
 func sort() { //подсчет количества выводов заявок таксисту
 	for i := 0; i < len(ArrRequest); i++ {
@@ -84,10 +87,12 @@ func main() {
 
 func cabbie(w http.ResponseWriter, r *http.Request) { //ф-ция-обработчик запросов от таксистов
 	vars := mux.Vars(r)
-	interrogator := vars["request"]
-	if interrogator == "request" {
+	interrogator := vars[usrCabbie]
+	if interrogator == usrCabbie {
 		x := rand.Intn(sizeRequest)
+		muxLock.Lock()
 		fmt.Fprintln(w, "Заказ:", request[x])
+		muxLock.Unlock()
 		muxLock.Lock()
 		ArrRequest[numberAdminRequest] = application{title: request[x], views: ArrRequest[numberAdminRequest].views + 1}
 		numberAdminRequest++
@@ -96,9 +101,9 @@ func cabbie(w http.ResponseWriter, r *http.Request) { //ф-ция-обработ
 }
 func admin(w http.ResponseWriter, r *http.Request) { //функция-обработчик запросов от администратора
 	vars := mux.Vars(r)
-	interrogator := vars["admin"]
+	interrogator := vars[usrAdmin]
 	sort()
-	if interrogator == "admin" {
+	if interrogator == usrAdmin {
 		for i := 0; i < len(ArrRequest); i++ {
 			if ArrRequest[i].views > 0 {
 				fmt.Fprintln(w, "Заказ:", ArrRequest[i].title, "Количество показов:", ArrRequest[i].views)
